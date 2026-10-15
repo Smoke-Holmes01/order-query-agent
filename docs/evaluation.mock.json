@@ -1,0 +1,367 @@
+{
+  "model_mode": "mock",
+  "database": "mysql",
+  "data_notice": "所有业务数据均为固定模拟数据；mock 仅替代模型，不替代 MySQL。",
+  "metric_notice": "仅衡量固定语义用例，不代表通用自然语言查询准确率；澄清/拒绝不计入查询结果正确数。",
+  "total_cases": 14,
+  "plan_status_passed": 14,
+  "query_result_cases": 8,
+  "query_results_correct": 8,
+  "non_query_cases": 6,
+  "non_query_passed": 6,
+  "answers_passed": 14,
+  "all_checks_passed": 14,
+  "not_run_cases": 0,
+  "error_classification": {},
+  "provider_error_classification": {},
+  "elapsed_ms": 217.421,
+  "cases": [
+    {
+      "id": "01_daily_sales",
+      "expected_status": "success",
+      "actual_status": "success",
+      "plan_status_passed": true,
+      "result_correct": true,
+      "answer_passed": true,
+      "database_query_count": 1,
+      "passed": true,
+      "failures": [],
+      "error_code": null,
+      "error_category": null,
+      "actual_plan": {
+        "query_type": "daily_sales",
+        "start_date": "2026-10-01",
+        "end_date": "2026-10-04",
+        "rank_by": null,
+        "top_n": null
+      },
+      "actual_data": [
+        {
+          "payment_date": "2026-10-01",
+          "sales_amount": "340.00",
+          "sales_quantity": 6
+        },
+        {
+          "payment_date": "2026-10-02",
+          "sales_amount": "160.00",
+          "sales_quantity": 3
+        }
+      ],
+      "elapsed_ms": 23.396
+    },
+    {
+      "id": "02_category_sales",
+      "expected_status": "success",
+      "actual_status": "success",
+      "plan_status_passed": true,
+      "result_correct": true,
+      "answer_passed": true,
+      "database_query_count": 1,
+      "passed": true,
+      "failures": [],
+      "error_code": null,
+      "error_category": null,
+      "actual_plan": {
+        "query_type": "category_sales",
+        "start_date": "2026-10-01",
+        "end_date": "2026-10-04",
+        "rank_by": null,
+        "top_n": null
+      },
+      "actual_data": [
+        {
+          "category": "数码",
+          "sales_amount": "350.00",
+          "sales_quantity": 4
+        },
+        {
+          "category": "家居",
+          "sales_amount": "150.00",
+          "sales_quantity": 5
+        }
+      ],
+      "elapsed_ms": 35.333
+    },
+    {
+      "id": "03_top_amount",
+      "expected_status": "success",
+      "actual_status": "success",
+      "plan_status_passed": true,
+      "result_correct": true,
+      "answer_passed": true,
+      "database_query_count": 1,
+      "passed": true,
+      "failures": [],
+      "error_code": null,
+      "error_category": null,
+      "actual_plan": {
+        "query_type": "top_products",
+        "start_date": "2026-10-01",
+        "end_date": "2026-10-04",
+        "rank_by": "sales_amount",
+        "top_n": 2
+      },
+      "actual_data": [
+        {
+          "product_id": 1,
+          "sku": "P1",
+          "product_name": "键盘",
+          "category": "数码",
+          "sales_amount": "300.00",
+          "sales_quantity": 3
+        },
+        {
+          "product_id": 3,
+          "sku": "P3",
+          "product_name": "杯子",
+          "category": "家居",
+          "sales_amount": "150.00",
+          "sales_quantity": 5
+        }
+      ],
+      "elapsed_ms": 30.126
+    },
+    {
+      "id": "04_top_quantity",
+      "expected_status": "success",
+      "actual_status": "success",
+      "plan_status_passed": true,
+      "result_correct": true,
+      "answer_passed": true,
+      "database_query_count": 1,
+      "passed": true,
+      "failures": [],
+      "error_code": null,
+      "error_category": null,
+      "actual_plan": {
+        "query_type": "top_products",
+        "start_date": "2026-10-01",
+        "end_date": "2026-10-04",
+        "rank_by": "sales_quantity",
+        "top_n": 1
+      },
+      "actual_data": [
+        {
+          "product_id": 3,
+          "sku": "P3",
+          "product_name": "杯子",
+          "category": "家居",
+          "sales_amount": "150.00",
+          "sales_quantity": 5
+        }
+      ],
+      "elapsed_ms": 31.237
+    },
+    {
+      "id": "05_inclusive_lower_boundary",
+      "expected_status": "success",
+      "actual_status": "success",
+      "plan_status_passed": true,
+      "result_correct": true,
+      "answer_passed": true,
+      "database_query_count": 1,
+      "passed": true,
+      "failures": [],
+      "error_code": null,
+      "error_category": null,
+      "actual_plan": {
+        "query_type": "daily_sales",
+        "start_date": "2026-10-02",
+        "end_date": "2026-10-04",
+        "rank_by": null,
+        "top_n": null
+      },
+      "actual_data": [
+        {
+          "payment_date": "2026-10-02",
+          "sales_amount": "160.00",
+          "sales_quantity": 3
+        }
+      ],
+      "elapsed_ms": 18.635
+    },
+    {
+      "id": "06_exclusive_upper_boundary",
+      "expected_status": "success",
+      "actual_status": "success",
+      "plan_status_passed": true,
+      "result_correct": true,
+      "answer_passed": true,
+      "database_query_count": 1,
+      "passed": true,
+      "failures": [],
+      "error_code": null,
+      "error_category": null,
+      "actual_plan": {
+        "query_type": "daily_sales",
+        "start_date": "2026-10-01",
+        "end_date": "2026-10-02",
+        "rank_by": null,
+        "top_n": null
+      },
+      "actual_data": [
+        {
+          "payment_date": "2026-10-01",
+          "sales_amount": "340.00",
+          "sales_quantity": 6
+        }
+      ],
+      "elapsed_ms": 19.211
+    },
+    {
+      "id": "07_empty_interval",
+      "expected_status": "success",
+      "actual_status": "success",
+      "plan_status_passed": true,
+      "result_correct": true,
+      "answer_passed": true,
+      "database_query_count": 1,
+      "passed": true,
+      "failures": [],
+      "error_code": null,
+      "error_category": null,
+      "actual_plan": {
+        "query_type": "daily_sales",
+        "start_date": "2026-10-03",
+        "end_date": "2026-10-04",
+        "rank_by": null,
+        "top_n": null
+      },
+      "actual_data": [],
+      "elapsed_ms": 19.391
+    },
+    {
+      "id": "08_paid_only_total",
+      "expected_status": "success",
+      "actual_status": "success",
+      "plan_status_passed": true,
+      "result_correct": true,
+      "answer_passed": true,
+      "database_query_count": 1,
+      "passed": true,
+      "failures": [],
+      "error_code": null,
+      "error_category": null,
+      "actual_plan": {
+        "query_type": "daily_sales",
+        "start_date": "2026-10-01",
+        "end_date": "2026-10-04",
+        "rank_by": null,
+        "top_n": null
+      },
+      "actual_data": [
+        {
+          "payment_date": "2026-10-01",
+          "sales_amount": "340.00",
+          "sales_quantity": 6
+        },
+        {
+          "payment_date": "2026-10-02",
+          "sales_amount": "160.00",
+          "sales_quantity": 3
+        }
+      ],
+      "elapsed_ms": 34.483
+    },
+    {
+      "id": "09_ambiguous_ranking",
+      "expected_status": "needs_clarification",
+      "actual_status": "needs_clarification",
+      "plan_status_passed": true,
+      "result_correct": null,
+      "answer_passed": true,
+      "database_query_count": 0,
+      "passed": true,
+      "failures": [],
+      "error_code": null,
+      "error_category": null,
+      "actual_plan": null,
+      "actual_data": [],
+      "elapsed_ms": 1.136
+    },
+    {
+      "id": "10_missing_dates",
+      "expected_status": "needs_clarification",
+      "actual_status": "needs_clarification",
+      "plan_status_passed": true,
+      "result_correct": null,
+      "answer_passed": true,
+      "database_query_count": 0,
+      "passed": true,
+      "failures": [],
+      "error_code": null,
+      "error_category": null,
+      "actual_plan": null,
+      "actual_data": [],
+      "elapsed_ms": 0.943
+    },
+    {
+      "id": "10b_ambiguous_end_date",
+      "expected_status": "needs_clarification",
+      "actual_status": "needs_clarification",
+      "plan_status_passed": true,
+      "result_correct": null,
+      "answer_passed": true,
+      "database_query_count": 0,
+      "passed": true,
+      "failures": [],
+      "error_code": null,
+      "error_category": null,
+      "actual_plan": null,
+      "actual_data": [],
+      "elapsed_ms": 0.911
+    },
+    {
+      "id": "11_forecast_unsupported",
+      "expected_status": "unsupported",
+      "actual_status": "unsupported",
+      "plan_status_passed": true,
+      "result_correct": null,
+      "answer_passed": true,
+      "database_query_count": 0,
+      "passed": true,
+      "failures": [],
+      "error_code": null,
+      "error_category": null,
+      "actual_plan": null,
+      "actual_data": [],
+      "elapsed_ms": 0.81
+    },
+    {
+      "id": "12_delete_unsupported",
+      "expected_status": "unsupported",
+      "actual_status": "unsupported",
+      "plan_status_passed": true,
+      "result_correct": null,
+      "answer_passed": true,
+      "database_query_count": 0,
+      "passed": true,
+      "failures": [],
+      "error_code": null,
+      "error_category": null,
+      "actual_plan": null,
+      "actual_data": [],
+      "elapsed_ms": 0.82
+    },
+    {
+      "id": "12b_sql_injection_unsupported",
+      "expected_status": "unsupported",
+      "actual_status": "unsupported",
+      "plan_status_passed": true,
+      "result_correct": null,
+      "answer_passed": true,
+      "database_query_count": 0,
+      "passed": true,
+      "failures": [],
+      "error_code": null,
+      "error_category": null,
+      "actual_plan": null,
+      "actual_data": [],
+      "elapsed_ms": 0.901
+    }
+  ],
+  "exit_status": 0,
+  "mysql_version": "8.4.11",
+  "python_version": "3.11.16",
+  "completed_at_utc": "2026-10-15T09:30:49.912536+00:00"
+}

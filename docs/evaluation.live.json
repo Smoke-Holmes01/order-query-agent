@@ -1,0 +1,27 @@
+{
+  "model_mode": "live",
+  "database": "mysql",
+  "stage": "configuration",
+  "error_code": "EVALUATION_CONFIGURATION_ERROR",
+  "cause_code": null,
+  "message": "配置校验未通过；live 必须配置 MODEL_BASE_URL、MODEL_NAME、MODEL_API_KEY。不会回退到 mock。",
+  "total_cases": 14,
+  "plan_status_passed": 0,
+  "query_result_cases": 8,
+  "query_results_correct": 0,
+  "non_query_cases": 6,
+  "non_query_passed": 0,
+  "answers_passed": 0,
+  "all_checks_passed": 0,
+  "not_run_cases": 14,
+  "error_classification": {
+    "EVALUATION_CONFIGURATION_ERROR": 1
+  },
+  "provider_error_classification": {},
+  "cases": [],
+  "mysql_version": null,
+  "python_version": "3.11.16",
+  "completed_at_utc": "2026-10-15T09:20:34.766259+00:00",
+  "elapsed_ms": 709.244,
+  "exit_status": 2
+}

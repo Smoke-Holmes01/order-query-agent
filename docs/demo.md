@@ -1,0 +1,253 @@
+# 实际 API 演示
+
+业务数据全部为模拟数据。以下完整响应于 2026-10-15 使用本机 Python 3.11.16、MODEL_MODE=mock 和真实 MySQL 8.4.11 通过 HTTP 采集；request_id 和耗时每次不同。响应中的 data 即查询 rows。
+
+先按 README 初始化并 seed，然后启动：
+
+```powershell
+python -m uvicorn app.main:app --host 127.0.0.1 --port 8002
+```
+
+成功请求采用区间 [2026-10-01, 2026-10-04)，开始包含、结束不含。也可在 Compose 启动后使用同一 URL。
+
+## 销售额商品排行
+
+```powershell
+Invoke-RestMethod -Method Post -Uri 'http://127.0.0.1:8002/api/query' `
+  -ContentType 'application/json; charset=utf-8' `
+  -Body (@{ question = '按销售额查询从2026-10-01（含）到2026-10-04（不含）的前2个商品' } | ConvertTo-Json)
+```
+
+实际响应（HTTP 200）：
+
+```json
+{
+  "request_id": "4d62482a-e0b5-4a84-a3ae-764b2d846682",
+  "status": "success",
+  "model_mode": "mock",
+  "answer": "以下结果全部来自模拟数据。统计口径：仅已支付订单，按支付时间，人民币；Asia/Shanghai 当地日期区间 [2026-10-01, 2026-10-04)（开始包含，结束不含），销售额为成交单价×数量，销量为商品件数。按销售额降序取前 2 个商品，分数相同时按商品 ID 升序。\n1. P1 键盘：销售额 300.00 元，销量 3。\n2. P3 杯子：销售额 150.00 元，销量 5。",
+  "plan": {
+    "query_type": "top_products",
+    "start_date": "2026-10-01",
+    "end_date": "2026-10-04",
+    "rank_by": "sales_amount",
+    "top_n": 2
+  },
+  "data": [
+    {
+      "product_id": 1,
+      "sku": "P1",
+      "product_name": "键盘",
+      "category": "数码",
+      "sales_amount": "300.00",
+      "sales_quantity": 3
+    },
+    {
+      "product_id": 3,
+      "sku": "P3",
+      "product_name": "杯子",
+      "category": "家居",
+      "sales_amount": "150.00",
+      "sales_quantity": 5
+    }
+  ],
+  "trace": [
+    {
+      "node": "parse_plan",
+      "result": "parsed",
+      "duration_ms": 6.354,
+      "attempt": 1
+    },
+    {
+      "node": "validate_plan",
+      "result": "ready",
+      "duration_ms": 0.046,
+      "attempt": null
+    },
+    {
+      "node": "execute_query",
+      "result": "success",
+      "duration_ms": 51.192,
+      "attempt": null
+    },
+    {
+      "node": "format_answer",
+      "result": "success",
+      "duration_ms": 0.029,
+      "attempt": null
+    }
+  ],
+  "error": null,
+  "query": {
+    "template_id": "top_products_amount_v1",
+    "sql_template": "SELECT p.id AS product_id, p.sku, p.name AS product_name, p.category,\n       SUM(i.quantity * i.unit_price) AS sales_amount,\n       SUM(i.quantity) AS sales_quantity\nFROM orders AS o\nJOIN order_items AS i ON i.order_id = o.id\nJOIN products AS p ON p.id = i.product_id\nWHERE o.status = 'paid' AND o.paid_at >= %s AND o.paid_at < %s\nGROUP BY p.id, p.sku, p.name, p.category\nORDER BY sales_amount DESC, p.id ASC\nLIMIT %s",
+    "params": [
+      "2026-10-01 00:00:00",
+      "2026-10-04 00:00:00",
+      2
+    ]
+  }
+}
+```
+
+## 每日销售
+
+```powershell
+Invoke-RestMethod -Method Post -Uri 'http://127.0.0.1:8002/api/query' `
+  -ContentType 'application/json; charset=utf-8' `
+  -Body (@{ question = '查询从2026-10-01（含）到2026-10-04（不含）的每日销售额和销量' } | ConvertTo-Json)
+```
+
+实际响应（HTTP 200）：
+
+```json
+{
+  "request_id": "9e045624-d9e2-402e-8630-9d47c2525d40",
+  "status": "success",
+  "model_mode": "mock",
+  "answer": "以下结果全部来自模拟数据。统计口径：仅已支付订单，按支付时间，人民币；Asia/Shanghai 当地日期区间 [2026-10-01, 2026-10-04)（开始包含，结束不含），销售额为成交单价×数量，销量为商品件数。按支付日期升序；仅返回有记录的日期，不补零。\n2026-10-01：销售额 340.00 元，销量 6。\n2026-10-02：销售额 160.00 元，销量 3。",
+  "plan": {
+    "query_type": "daily_sales",
+    "start_date": "2026-10-01",
+    "end_date": "2026-10-04",
+    "rank_by": null,
+    "top_n": null
+  },
+  "data": [
+    {
+      "payment_date": "2026-10-01",
+      "sales_amount": "340.00",
+      "sales_quantity": 6
+    },
+    {
+      "payment_date": "2026-10-02",
+      "sales_amount": "160.00",
+      "sales_quantity": 3
+    }
+  ],
+  "trace": [
+    {
+      "node": "parse_plan",
+      "result": "parsed",
+      "duration_ms": 0.138,
+      "attempt": 1
+    },
+    {
+      "node": "validate_plan",
+      "result": "ready",
+      "duration_ms": 5.59,
+      "attempt": null
+    },
+    {
+      "node": "execute_query",
+      "result": "success",
+      "duration_ms": 30.196,
+      "attempt": null
+    },
+    {
+      "node": "format_answer",
+      "result": "success",
+      "duration_ms": 0.029,
+      "attempt": null
+    }
+  ],
+  "error": null,
+  "query": {
+    "template_id": "daily_sales_v1",
+    "sql_template": "SELECT DATE(o.paid_at) AS payment_date,\n       SUM(i.quantity * i.unit_price) AS sales_amount,\n       SUM(i.quantity) AS sales_quantity\nFROM orders AS o\nJOIN order_items AS i ON i.order_id = o.id\nWHERE o.status = 'paid' AND o.paid_at >= %s AND o.paid_at < %s\nGROUP BY DATE(o.paid_at)\nORDER BY payment_date ASC\nLIMIT %s",
+    "params": [
+      "2026-10-01 00:00:00",
+      "2026-10-04 00:00:00",
+      90
+    ]
+  }
+}
+```
+
+## 排名口径澄清
+
+```powershell
+Invoke-RestMethod -Method Post -Uri 'http://127.0.0.1:8002/api/query' `
+  -ContentType 'application/json; charset=utf-8' `
+  -Body (@{ question = '查询从2026-10-01（含）到2026-10-04（不含）卖得最好的前2个商品' } | ConvertTo-Json)
+```
+
+实际响应（HTTP 200）：
+
+```json
+{
+  "request_id": "b91b7756-84f6-403c-9ebf-b01717794cbf",
+  "status": "needs_clarification",
+  "model_mode": "mock",
+  "answer": "请明确商品排行按销售额还是销量。请将原问题和补充条件一起重新提交；本服务没有跨请求记忆。",
+  "plan": null,
+  "data": [],
+  "trace": [
+    {
+      "node": "parse_plan",
+      "result": "parsed",
+      "duration_ms": 0.221,
+      "attempt": 1
+    },
+    {
+      "node": "validate_plan",
+      "result": "needs_clarification",
+      "duration_ms": 0.027,
+      "attempt": null
+    },
+    {
+      "node": "format_answer",
+      "result": "needs_clarification",
+      "duration_ms": 0.001,
+      "attempt": null
+    }
+  ],
+  "error": null,
+  "query": null
+}
+```
+
+## 写操作拒绝
+
+```powershell
+Invoke-RestMethod -Method Post -Uri 'http://127.0.0.1:8002/api/query' `
+  -ContentType 'application/json; charset=utf-8' `
+  -Body (@{ question = '删除2026-10-01的全部订单' } | ConvertTo-Json)
+```
+
+实际响应（HTTP 200）：
+
+```json
+{
+  "request_id": "e351e29d-969f-43d2-894b-3a0e74c28713",
+  "status": "unsupported",
+  "model_mode": "mock",
+  "answer": "仅支持已支付订单的每日销售、品类销售及按销售额或销量的商品排行。不支持写操作、任意筛选、SQL 指令或原因推断。",
+  "plan": null,
+  "data": [],
+  "trace": [
+    {
+      "node": "parse_plan",
+      "result": "parsed",
+      "duration_ms": 0.028,
+      "attempt": 1
+    },
+    {
+      "node": "validate_plan",
+      "result": "unsupported",
+      "duration_ms": 0.011,
+      "attempt": null
+    },
+    {
+      "node": "format_answer",
+      "result": "unsupported",
+      "duration_ms": 0.001,
+      "attempt": null
+    }
+  ],
+  "error": null,
+  "query": null
+}
+```
+
+澄清响应不跨请求保存状态：请将原问题和补充条件一起重新提交。澄清与拒绝没有 execute_query 节点，query 为 null、data 为空。

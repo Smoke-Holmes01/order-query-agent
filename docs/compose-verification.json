@@ -1,0 +1,97 @@
+{
+  "runtime": "Compose API + MySQL",
+  "health": {
+    "database": "mysql",
+    "database_ready": true,
+    "server_version": "8.4.11",
+    "model_mode": "mock"
+  },
+  "http_semantic_cases_passed": 14,
+  "client_state_injection_http": 422,
+  "cases": [
+    {
+      "case": "01_daily_sales",
+      "http_status": 200,
+      "status": "success",
+      "passed": true
+    },
+    {
+      "case": "02_category_sales",
+      "http_status": 200,
+      "status": "success",
+      "passed": true
+    },
+    {
+      "case": "03_top_amount",
+      "http_status": 200,
+      "status": "success",
+      "passed": true
+    },
+    {
+      "case": "04_top_quantity",
+      "http_status": 200,
+      "status": "success",
+      "passed": true
+    },
+    {
+      "case": "05_inclusive_lower_boundary",
+      "http_status": 200,
+      "status": "success",
+      "passed": true
+    },
+    {
+      "case": "06_exclusive_upper_boundary",
+      "http_status": 200,
+      "status": "success",
+      "passed": true
+    },
+    {
+      "case": "07_empty_interval",
+      "http_status": 200,
+      "status": "success",
+      "passed": true
+    },
+    {
+      "case": "08_paid_only_total",
+      "http_status": 200,
+      "status": "success",
+      "passed": true
+    },
+    {
+      "case": "09_ambiguous_ranking",
+      "http_status": 200,
+      "status": "needs_clarification",
+      "passed": true
+    },
+    {
+      "case": "10_missing_dates",
+      "http_status": 200,
+      "status": "needs_clarification",
+      "passed": true
+    },
+    {
+      "case": "10b_ambiguous_end_date",
+      "http_status": 200,
+      "status": "needs_clarification",
+      "passed": true
+    },
+    {
+      "case": "11_forecast_unsupported",
+      "http_status": 200,
+      "status": "unsupported",
+      "passed": true
+    },
+    {
+      "case": "12_delete_unsupported",
+      "http_status": 200,
+      "status": "unsupported",
+      "passed": true
+    },
+    {
+      "case": "12b_sql_injection_unsupported",
+      "http_status": 200,
+      "status": "unsupported",
+      "passed": true
+    }
+  ]
+}

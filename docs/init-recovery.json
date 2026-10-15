@@ -1,0 +1,43 @@
+{
+  "scope": "Dedicated order_query_demo_test and newly created project-owned reader only; main demo account/data unchanged",
+  "mysql_version": "8.4.11",
+  "attribute": {
+    "order_query_agent": {
+      "owner": "order-query-agent",
+      "version": 1,
+      "database": "order_query_demo_test"
+    }
+  },
+  "checks": [
+    {
+      "existing_select_grants": 0,
+      "restored_select_grants": 3,
+      "seed_inserted_after_recovery": 0,
+      "passed": true
+    },
+    {
+      "existing_select_grants": 1,
+      "restored_select_grants": 3,
+      "seed_inserted_after_recovery": 0,
+      "passed": true
+    },
+    {
+      "existing_select_grants": 2,
+      "restored_select_grants": 3,
+      "seed_inserted_after_recovery": 0,
+      "passed": true
+    }
+  ],
+  "final_grants": [
+    "GRANT USAGE ON *.* TO `order_query_recovery_reader`@`%`",
+    "GRANT SELECT ON `order_query_demo_test`.`order_items` TO `order_query_recovery_reader`@`%`",
+    "GRANT SELECT ON `order_query_demo_test`.`orders` TO `order_query_recovery_reader`@`%`",
+    "GRANT SELECT ON `order_query_demo_test`.`products` TO `order_query_recovery_reader`@`%`"
+  ],
+  "seed_counts": [
+    3,
+    7,
+    9
+  ],
+  "main_database_unchanged": true
+}

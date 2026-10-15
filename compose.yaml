@@ -1,0 +1,62 @@
+name: order-query-agent
+services:
+  db:
+    image: mysql:8.4@sha256:24989179f58856db763f418010c1169fecc944e3ec1ea7e921572d83eb070f70
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ADMIN_PASSWORD:?Set DB_ADMIN_PASSWORD in .env.admin}
+      MYSQL_ROOT_HOST: ${MYSQL_ROOT_HOST:?Set MYSQL_ROOT_HOST for isolated development access}
+    ports:
+      - "127.0.0.1:3307:3306"
+    volumes:
+      - demo_mysql_data:/var/lib/mysql
+    networks:
+      - database
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "--silent"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 20s
+  bootstrap:
+    build:
+      context: .
+      target: bootstrap
+    env_file:
+      - .env
+      - .env.admin
+    environment:
+      DB_HOST: db
+      DB_PORT: "3306"
+      DB_ADMIN_HOST: db
+      DB_ADMIN_PORT: "3306"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - database
+    restart: "no"
+  api:
+    build:
+      context: .
+      target: runtime
+    env_file:
+      - .env
+    environment:
+      DB_HOST: db
+      DB_PORT: "3306"
+    ports:
+      - "127.0.0.1:8002:8002"
+    depends_on:
+      db:
+        condition: service_healthy
+      bootstrap:
+        condition: service_completed_successfully
+    networks:
+      - database
+      - outbound
+networks:
+  database:
+    driver: bridge
+  outbound: {}
+volumes:
+  demo_mysql_data:

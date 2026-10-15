@@ -1,0 +1,173 @@
+{
+  "database": "mysql",
+  "model_mode": "mock",
+  "notice": "All business rows are simulated data. Independent control SQL, not imported from production templates.",
+  "health": {
+    "database": "mysql",
+    "database_ready": true,
+    "server_version": "8.4.11"
+  },
+  "checks": [
+    {
+      "check": "daily",
+      "sql": "SELECT DATE(eligible.paid_at) AS payment_date,SUM(d.unit_price*d.quantity) AS sales_amount,SUM(d.quantity) AS sales_quantity FROM (SELECT id,paid_at FROM orders WHERE status=%s AND paid_at >= %s AND paid_at < %s) eligible INNER JOIN order_items d ON d.order_id=eligible.id GROUP BY DATE(eligible.paid_at) ORDER BY payment_date",
+      "params": [
+        "paid",
+        "2026-10-01 00:00:00",
+        "2026-10-04 00:00:00"
+      ],
+      "rows": [
+        {
+          "payment_date": "2026-10-01",
+          "sales_amount": "340.00",
+          "sales_quantity": "6.00"
+        },
+        {
+          "payment_date": "2026-10-02",
+          "sales_amount": "160.00",
+          "sales_quantity": "3.00"
+        }
+      ]
+    },
+    {
+      "check": "category",
+      "sql": "SELECT p.category,SUM(d.unit_price*d.quantity) AS sales_amount,SUM(d.quantity) AS sales_quantity FROM products p INNER JOIN order_items d ON d.product_id=p.id WHERE EXISTS (SELECT 1 FROM orders o WHERE o.id=d.order_id AND o.status=%s AND o.paid_at >= %s AND o.paid_at < %s) GROUP BY p.category ORDER BY sales_amount DESC,p.category ASC",
+      "params": [
+        "paid",
+        "2026-10-01 00:00:00",
+        "2026-10-04 00:00:00"
+      ],
+      "rows": [
+        {
+          "category": "数码",
+          "sales_amount": "350.00",
+          "sales_quantity": "4.00"
+        },
+        {
+          "category": "家居",
+          "sales_amount": "150.00",
+          "sales_quantity": "5.00"
+        }
+      ]
+    },
+    {
+      "check": "products",
+      "sql": "SELECT p.sku,SUM(d.unit_price*d.quantity) AS sales_amount,SUM(d.quantity) AS sales_quantity FROM products p INNER JOIN order_items d ON d.product_id=p.id WHERE d.order_id IN (SELECT id FROM orders WHERE status=%s AND paid_at >= %s AND paid_at < %s) GROUP BY p.id,p.sku ORDER BY sales_amount DESC,p.id ASC",
+      "params": [
+        "paid",
+        "2026-10-01 00:00:00",
+        "2026-10-04 00:00:00"
+      ],
+      "rows": [
+        {
+          "sku": "P1",
+          "sales_amount": "300.00",
+          "sales_quantity": "3.00"
+        },
+        {
+          "sku": "P3",
+          "sales_amount": "150.00",
+          "sales_quantity": "5.00"
+        },
+        {
+          "sku": "P2",
+          "sales_amount": "50.00",
+          "sales_quantity": "1.00"
+        }
+      ]
+    },
+    {
+      "check": "lower_boundary",
+      "sql": "SELECT SUM(unit_price*quantity) AS sales_amount FROM order_items WHERE order_id IN (SELECT id FROM orders WHERE status=%s AND paid_at >= %s AND paid_at < %s)",
+      "params": [
+        "paid",
+        "2026-10-02 00:00:00",
+        "2026-10-04 00:00:00"
+      ],
+      "rows": [
+        {
+          "sales_amount": "160.00"
+        }
+      ]
+    },
+    {
+      "check": "upper_boundary",
+      "sql": "SELECT SUM(unit_price*quantity) AS sales_amount FROM order_items WHERE order_id IN (SELECT id FROM orders WHERE status=%s AND paid_at >= %s AND paid_at < %s)",
+      "params": [
+        "paid",
+        "2026-10-01 00:00:00",
+        "2026-10-02 00:00:00"
+      ],
+      "rows": [
+        {
+          "sales_amount": "340.00"
+        }
+      ]
+    },
+    {
+      "check": "empty",
+      "sql": "SELECT id FROM orders WHERE status=%s AND paid_at >= %s AND paid_at < %s",
+      "params": [
+        "paid",
+        "2026-10-03 00:00:00",
+        "2026-10-04 00:00:00"
+      ],
+      "rows": []
+    },
+    {
+      "check": "total",
+      "sql": "SELECT SUM(unit_price*quantity) AS sales_amount FROM order_items WHERE order_id IN (SELECT id FROM orders WHERE status=%s AND paid_at >= %s AND paid_at < %s)",
+      "params": [
+        "paid",
+        "2026-10-01 00:00:00",
+        "2026-10-04 00:00:00"
+      ],
+      "rows": [
+        {
+          "sales_amount": "500.00"
+        }
+      ]
+    },
+    {
+      "check": "product_quantity_ranking",
+      "sql": "SELECT p.sku,SUM(d.unit_price*d.quantity) AS sales_amount,SUM(d.quantity) AS sales_quantity FROM products p INNER JOIN order_items d ON d.product_id=p.id WHERE d.order_id IN (SELECT id FROM orders WHERE status=%s AND paid_at >= %s AND paid_at < %s) GROUP BY p.id,p.sku ORDER BY sales_quantity DESC,p.id ASC",
+      "params": [
+        "paid",
+        "2026-10-01 00:00:00",
+        "2026-10-04 00:00:00"
+      ],
+      "rows": [
+        {
+          "sku": "P3",
+          "sales_amount": "150.00",
+          "sales_quantity": "5.00"
+        },
+        {
+          "sku": "P1",
+          "sales_amount": "300.00",
+          "sales_quantity": "3.00"
+        },
+        {
+          "sku": "P2",
+          "sales_amount": "50.00",
+          "sales_quantity": "1.00"
+        }
+      ]
+    }
+  ],
+  "session": {
+    "account": "order_query_reader@%",
+    "active_roles": "NONE",
+    "max_execution_time": 2000,
+    "session_timezone": "+08:00"
+  },
+  "grants": [
+    "GRANT USAGE ON *.* TO `order_query_reader`@`%`",
+    "GRANT SELECT ON `order_query_demo`.`order_items` TO `order_query_reader`@`%`",
+    "GRANT SELECT ON `order_query_demo`.`orders` TO `order_query_reader`@`%`",
+    "GRANT SELECT ON `order_query_demo`.`products` TO `order_query_reader`@`%`"
+  ],
+  "product_count": 3,
+  "order_count": 7,
+  "item_count": 9
+}
