@@ -143,6 +143,58 @@ def test_open_lower_or_contradictory_boundaries_have_zero_database_calls(questio
     assert response.status == "needs_clarification" and repository.calls == []
 
 
+@pytest.mark.parametrize("model_mode", ["mock", "live"])
+def test_trailing_excluded_start_conflicts_with_date_annotation(model_mode):
+    question = "查询从2026-10-01（含）到2026-10-04（不含）的每日销售额和销量，不含开始日期"
+    adapter = MockModelAdapter() if model_mode == "mock" else Adapter(ready())
+    state, response, repository = run(adapter=adapter, question=question, model_mode=model_mode)
+    assert state["http_status"] == 200
+    assert response.status == "needs_clarification"
+    assert response.plan is None and response.query is None and response.data == []
+    assert repository.calls == []
+    assert all(event.node != "execute_query" for event in response.trace)
+
+
+@pytest.mark.parametrize("model_mode", ["mock", "live"])
+@pytest.mark.parametrize("query_type,question", [
+    ("daily_sales", "查询从2026-10-01（含）到2026-10-04（不含）的每日销售额"),
+    ("category_sales", "查询从2026-10-01（含）到2026-10-04（不含）的品类销售额"),
+    ("top_products", "按销售额查询从2026-10-01（含）到2026-10-04（不含）的前2个商品"),
+])
+@pytest.mark.parametrize("qualifier,status", [
+    ("排除周末", "unsupported"),
+    ("销售额大于100元", "needs_clarification"),
+    ("紫色限定款", "needs_clarification"),
+])
+def test_qualifiers_are_checked_locally_before_any_query(model_mode, query_type, question, qualifier, status):
+    decision = ModelDecision(decision="ready", plan=CandidatePlan(
+        query_type=query_type, start_date="2026-10-01", end_date="2026-10-04",
+        rank_by="sales_amount" if query_type == "top_products" else None,
+        top_n=2 if query_type == "top_products" else None,
+    ), message="")
+    adapter = MockModelAdapter() if model_mode == "mock" else Adapter(decision)
+    state, response, repository = run(adapter=adapter, repository=Repository(rows=[]),
+                                      question=question + "，" + qualifier, model_mode=model_mode)
+    assert state["http_status"] == 200
+    assert response.status == status and response.model_mode == model_mode
+    assert response.plan is None and response.query is None and response.data == []
+    assert repository.calls == []
+    assert all(event.node != "execute_query" for event in response.trace)
+
+
+@pytest.mark.parametrize("model_mode", ["mock", "live"])
+@pytest.mark.parametrize("question", [
+    "查询从2026-10-01（含）到2026-10-04（不含）的每日销售额和销量",
+    "查询从2026-10-01（含）到2026-10-03（含）的每日销售额和销量",
+])
+def test_supported_inclusive_and_exclusive_end_dates_still_query(model_mode, question):
+    adapter = MockModelAdapter() if model_mode == "mock" else Adapter(ready())
+    _, response, repository = run(adapter=adapter, question=question, model_mode=model_mode)
+    assert response.status == "success"
+    assert response.plan.end_date == date(2026, 10, 4)
+    assert response.query is not None and len(repository.calls) == 1
+
+
 def top_ready(rank_by="sales_amount", top_n=2):
     return ModelDecision(decision="ready", plan=CandidatePlan(
         query_type="top_products", start_date="2026-10-01", end_date="2026-10-04",

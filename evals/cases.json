@@ -143,6 +143,24 @@
       "expected_plan": null,
       "expected_rows": [],
       "ordered": true
+    },
+    {
+      "id": "13_conflicting_trailing_start_boundary",
+      "scenario": "尾部不含开始日期与开始含注释冲突，澄清且零查询",
+      "question": "查询从2026-10-01（含）到2026-10-04（不含）的每日销售额和销量，不含开始日期",
+      "expected_status": "needs_clarification",
+      "expected_plan": null,
+      "expected_rows": [],
+      "ordered": true
+    },
+    {
+      "id": "14_weekend_filter_unsupported",
+      "scenario": "排除周末是未支持的附加筛选，即使模型输出ready也零查询",
+      "question": "查询从2026-10-01（含）到2026-10-04（不含）的每日销售额，排除周末",
+      "expected_status": "unsupported",
+      "expected_plan": null,
+      "expected_rows": [],
+      "ordered": true
     }
   ]
 }

@@ -15,7 +15,7 @@
 | Docker / Compose | 29.8.1 / v5.5.1 |
 | FastAPI / Pydantic | 0.143.1 / 2.14.1 |
 | LangGraph / PyMySQL / httpx | 1.2.15 / 1.2.3 / 0.28.1 |
-| 模型模式 | mock；无真实模型密钥，无付费模型调用 |
+| 模型模式 | mock和真实live分别评测；live使用用户指定的gemini-3.8-flash |
 
 完整依赖固定在 requirements.txt；MySQL 与 Python 基础镜像固定实际拉取的 digest。管理员和运行密码分别使用随机值，仅保存于被忽略的本地文件，未打印或提交。未查找电脑上的既有数据库或模型凭据，未改动既有 MySQL84 服务。
 
@@ -40,7 +40,7 @@
 
 ## 测试、权限和超时
 
-最终完整运行 **213 passed in 3.53s**，退出0，无失败、无跳过项，其中5项真实MySQL集成检查已明确启用。启用命令为：
+本轮修复后完整运行 **339 passed in 4.31s**，退出0，无失败、无跳过项，其中5项真实MySQL集成检查已明确启用。启用命令为：
 
 ```powershell
 $env:RUN_MYSQL_TESTS = "1"
@@ -66,9 +66,9 @@ DELETE FROM products WHERE 1=0;
 
 ## 语义评测与 HTTP 演示
 
-`python -m scripts.evaluate --mode mock --output docs/evaluation.mock.json` 实际使用 mock 计划解析加真实 MySQL，退出0。报告见 [evaluation.mock.json](evaluation.mock.json)：14条总用例，计划/状态14/14，查询结果8/8，澄清/拒绝6/6，回答检查14/14；6条非查询用例的业务查询次数全部为0。该结果只衡量固定用例，不能泛化为通用自然语言查询准确率。
+`python -m scripts.evaluate --mode mock --output docs/evaluation.mock.json` 实际使用 mock 计划解析加真实 MySQL，退出0。报告见 [evaluation.mock.json](evaluation.mock.json)：16条总用例，计划/状态16/16，查询结果8/8，澄清/拒绝8/8，回答检查16/16；8条非查询用例的业务查询次数全部为0。该结果只衡量固定用例，不能泛化为通用自然语言查询准确率。
 
-`python -m scripts.evaluate --mode live --output docs/evaluation.live.json` 因缺 MODEL_NAME、MODEL_API_KEY 退出2，阶段为 configuration，14条均未运行，未回退mock。报告见 [evaluation.live.json](evaluation.live.json)。这是缺配置的失败行为验证，**真实模型语义能力未验收**。
+用户提供真实模型配置并明确同意development模式明文HTTP后，实际执行 `python -m scripts.evaluate --mode live --output docs/evaluation.live.json`，16条全部尝试，退出1。计划/状态9/16、查询结果5/8、非查询4/8、回答12/16；7个最终失败分为3次MODEL_OUTPUT_INVALID和4次MODEL_TIMEOUT，业务查询次数全为0。报告见 [evaluation.live.json](evaluation.live.json)，逐条计划核对及补充诊断说明见 [live-verification.md](live-verification.md)。**真实模型链路已验证可运行，稳定性尚未全部验收通过**。此前缺配置的失败记录不再作为当前live报告。
 
 本机实际启动 `python -m uvicorn app.main:app --host 127.0.0.1 --port 8002`，`/health`、`/openapi.json` 返回200。四种真实HTTP响应已写入 [demo.md](demo.md) 和 [demo.local.json](demo.local.json)：金额排行/每日查询成功，口径不明澄清，删除请求拒绝。响应展示真实 plan、data、query 和 trace。
 
@@ -76,10 +76,12 @@ DELETE FROM products WHERE 1=0;
 
 已实际执行 `docker compose --env-file .env.admin up --build -d`，退出0。db健康、bootstrap退出0且seed新增0条、API运行；宿主映射仅为 `127.0.0.1:3307` 和 `127.0.0.1:8002`。API容器实测UID=10001，不存在DB_ADMIN环境变量、管理员脚本目录或 `.env.admin` 文件。命名卷始终保留。
 
-最终容器API的 `/health`、`/docs` 返回200，14条真实HTTP语义请求全部与已核对计划及MySQL rows一致；客户端state注入返回422。证据见 [compose-verification.json](compose-verification.json)。本机Uvicorn验证后已停止，目前8002端口由Compose API提供。
+修复后的容器API（mock模式）的 `/health`、`/docs` 返回200，16条真实HTTP语义请求全部与已核对计划及MySQL rows一致；客户端state注入返回422。用户原句“不含开始日期”返回needs_clarification，“排除周末”返回unsupported，query=null、data=[]且trace无execute_query。证据见 [compose-verification.json](compose-verification.json)。目前8002端口由Compose API提供，真实live通过评测CLI独立验证。
 
 Docker 29.8.1 的 internal 网络未发布宿主端口，因此使用项目独立普通bridge。`MYSQL_ROOT_HOST=%` 仅为宿主初始化与bootstrap开发访问，配合回环宿主映射和独立网络；这不是生产部署安全方案。
 
 验收中实际发现并修复 MySQL CHECK元数据转义形式及身份SQL保留字别名兼容问题，均以真实MySQL复验；没有放宽结构、授权或超时要求。
 
-尚未验证：真实模型供应商调用/语义表现、生产部署和性能基准。已有本机MySQL路径共享相同入口，但本轮数据库验收来自Docker MySQL8.4.11，不宣称已验收电脑上既有MySQL服务或所有操作系统。
+本轮确认并修复：原句末尾的开始边界遗漏，以及live候选计划丢失附加条件仍被放行。修复后两种模式共享保守语法覆盖检查；未知条件澄清、周末/节假日筛选拒绝，不能因为模型返回ready而绕过。本轮新增126项测试（原213项，现339项），包含模拟live-ready零查询回归，不将替身模型计作真实live成绩。
+
+当前缺口：live格式稳定性和超时尚未全部通过；生产部署和性能基准未验证。已有本机MySQL路径共享相同入口，但本轮数据库验收来自Docker MySQL8.4.11，不宣称已验收电脑上既有MySQL服务或所有操作系统。HTTP开发开关默认关闭，只有development可以显式启用，实际评测前已获用户明确授权；原始凭据只在忽略的本地配置中，报告不记录模型地址或密钥。

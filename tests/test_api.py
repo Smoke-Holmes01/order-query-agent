@@ -7,31 +7,34 @@ from fastapi.testclient import TestClient
 from app.config import Settings
 from app.errors import AppError
 from app.main import create_app
+from app.model_adapter import MockModelAdapter
 from app.schemas import ModelDecision
 
 QUESTION = "从2026-10-01（含）到2026-10-04（不含）的每日销售"
 
 
 class Adapter:
-    def __init__(self, decision="ready", error=None):
+    def __init__(self, decision="ready", error=None, plan=None):
         self.decision = decision
         self.error = error
         self.calls = 0
+        self.plan = plan
 
     def parse(self, question, *, deadline):
         self.calls += 1
         if self.error:
             raise self.error
-        return ModelDecision(decision=self.decision, plan={
+        return ModelDecision(decision=self.decision, plan=self.plan or {
             "query_type": "daily_sales", "start_date": "2026-10-01", "end_date": "2026-10-04",
             "rank_by": None, "top_n": None,
         }, message="请补充信息" if self.decision == "needs_clarification" else "")
 
 
 class Repo:
-    def __init__(self, error=None):
+    def __init__(self, error=None, rows=None):
         self.error = error
         self.calls = 0
+        self.rows = [{"payment_date": date(2026, 10, 1), "sales_amount": Decimal("340.00"), "sales_quantity": 6}] if rows is None else rows
 
     def health(self):
         if self.error:
@@ -44,11 +47,13 @@ class Repo:
             raise self.error
         return {"template_id": "daily_sales", "sql_template": "SELECT ... WHERE paid_at >= %s AND paid_at < %s LIMIT %s",
                 "query_params": ["2026-10-01 00:00:00", "2026-10-04 00:00:00", 90],
-                "rows": [{"payment_date": date(2026, 10, 1), "sales_amount": Decimal("340.00"), "sales_quantity": 6}]}
+                "rows": self.rows}
 
 
-def client(adapter=None, repository=None):
-    return TestClient(create_app(Settings(db_password="unit-test-placeholder"),
+def client(adapter=None, repository=None, model_mode="mock"):
+    return TestClient(create_app(Settings(db_password="unit-test-placeholder", model_mode=model_mode,
+                                         model_base_url="https://model.example/v1", model_name="unit-test-model",
+                                         model_api_key="unit-test-only-placeholder"),
                                  adapter=adapter or Adapter(), repository=repository or Repo()))
 
 
@@ -137,3 +142,62 @@ def test_unhealthy_database_503():
         response = api.get("/health")
         assert response.status_code == 503
         assert response.json()["database_ready"] is False
+
+
+@pytest.mark.parametrize("model_mode", ["mock", "live"])
+def test_trailing_start_exclusion_has_safe_http_contract_and_zero_database_calls(model_mode):
+    repo = Repo()
+    adapter = MockModelAdapter() if model_mode == "mock" else Adapter()
+    question = "查询从2026-10-01（含）到2026-10-04（不含）的每日销售额和销量，不含开始日期"
+    with client(adapter, repo, model_mode=model_mode) as api:
+        response = api.post("/api/query", json={"question": question})
+    body = response.json()
+    assert response.status_code == 200
+    assert body["status"] == "needs_clarification" and body["model_mode"] == model_mode
+    assert body["plan"] is None and body["query"] is None and body["data"] == []
+    assert repo.calls == 0
+    assert all(event["node"] != "execute_query" for event in body["trace"])
+
+
+@pytest.mark.parametrize("model_mode", ["mock", "live"])
+@pytest.mark.parametrize("query_type,question", [
+    ("daily_sales", "查询从2026-10-01（含）到2026-10-04（不含）的每日销售额"),
+    ("category_sales", "查询从2026-10-01（含）到2026-10-04（不含）的品类销售额"),
+    ("top_products", "按销售额查询从2026-10-01（含）到2026-10-04（不含）的前2个商品"),
+])
+@pytest.mark.parametrize("qualifier,status", [
+    ("排除周末", "unsupported"),
+    ("销售额大于100元", "needs_clarification"),
+    ("紫色限定款", "needs_clarification"),
+])
+def test_extra_qualifier_http_contract_rejects_even_model_ready(model_mode, query_type, question, qualifier, status):
+    repo = Repo(rows=[])
+    adapter = MockModelAdapter() if model_mode == "mock" else Adapter(plan={
+        "query_type": query_type, "start_date": "2026-10-01", "end_date": "2026-10-04",
+        "rank_by": "sales_amount" if query_type == "top_products" else None,
+        "top_n": 2 if query_type == "top_products" else None,
+    })
+    with client(adapter, repo, model_mode=model_mode) as api:
+        response = api.post("/api/query", json={"question": question + "，" + qualifier})
+    body = response.json()
+    assert response.status_code == 200
+    assert body["status"] == status and body["model_mode"] == model_mode
+    assert body["plan"] is None and body["query"] is None and body["data"] == []
+    assert repo.calls == 0
+    assert all(event["node"] != "execute_query" for event in body["trace"])
+
+
+@pytest.mark.parametrize("model_mode", ["mock", "live"])
+@pytest.mark.parametrize("question", [
+    "查询从2026-10-01（含）到2026-10-04（不含）的每日销售额和销量",
+    "查询从2026-10-01（含）到2026-10-03（含）的每日销售额和销量",
+])
+def test_supported_date_annotations_http_positive_regression(model_mode, question):
+    repo = Repo()
+    adapter = MockModelAdapter() if model_mode == "mock" else Adapter()
+    with client(adapter, repo, model_mode=model_mode) as api:
+        response = api.post("/api/query", json={"question": question})
+    body = response.json()
+    assert response.status_code == 200 and body["status"] == "success"
+    assert body["plan"]["end_date"] == "2026-10-04"
+    assert body["query"] is not None and repo.calls == 1

@@ -29,6 +29,7 @@ def unsupported_reason(question: str) -> str | None:
         "只看", "仅看", "只统计", "仅统计", "筛选", "品类为", "商品为", "订单状态为",
         "数码", "家居", "键盘", "鼠标", "杯子", "渠道", "店铺", "地区", "用户", "客户",
         "城市", "省份", "订单状态", "未支付", "已取消", "取消订单", "未付款",
+        "周末", "工作日", "节假日", "休息日",
     )
     compact = re.sub(r"\s+", "", question).upper()
     for supported_paid_scope in ("只统计已支付订单", "仅统计已支付订单", "只看已支付订单", "仅看已支付订单"):
@@ -83,12 +84,41 @@ def ranking_in_question(question: str) -> tuple[str | None, int | None]:
     return metric, top_n
 
 
+_BOUNDARY_ACTION_PATTERN = r"不包含|不包括|不含|排除|包含|包括|含|排他上界"
+_BOUNDARY_ENDPOINT_PATTERN = r"开始日期|起始日期|开始日|起始日|开始|起始|结束日期|截止日期|结束日|截止日|结束|截止"
+_BOUNDARY_ACTION_RE = re.compile(_BOUNDARY_ACTION_PATTERN)
+NAMED_BOUNDARY_RE = re.compile(
+    rf"(?P<action_before>{_BOUNDARY_ACTION_PATTERN})\s*(?P<endpoint_after>{_BOUNDARY_ENDPOINT_PATTERN})"
+    rf"|(?P<endpoint_before>{_BOUNDARY_ENDPOINT_PATTERN})\s*"
+    rf"(?:(?:应当|应该|需要|为|是|应|需|要|：|:)\s*)?"
+    rf"(?P<action_after>{_BOUNDARY_ACTION_PATTERN})"
+)
+
+
+def _boundary_values(fragment: str) -> set[bool]:
+    """Consume each longest action once so a negation never also means inclusion."""
+    return {
+        not match.group().startswith(("不", "排除", "排他"))
+        for match in _BOUNDARY_ACTION_RE.finditer(fragment)
+    }
+
+
 def _leading_annotations(fragment: str) -> list[str]:
     annotations = []
     while match := re.match(r"\s*[（(]([^）)]*)[）)]", fragment):
         annotations.append(match[1])
         fragment = fragment[match.end():]
     return annotations
+
+
+def _adjacent_boundary_values(fragment: str) -> set[bool]:
+    values = set()
+    for annotation in _leading_annotations(fragment):
+        # Explicitly named endpoints are handled sentence-wide, even inside notes.
+        values.update(_boundary_values(NAMED_BOUNDARY_RE.sub("", annotation)))
+    if not NAMED_BOUNDARY_RE.match(fragment.lstrip()) and (match := re.match(rf"\s*({_BOUNDARY_ACTION_PATTERN})", fragment)):
+        values.update(_boundary_values(match[1]))
+    return values
 
 
 def explicit_interval(question: str) -> tuple[date, date] | None:
@@ -114,42 +144,26 @@ def explicit_interval(question: str) -> tuple[date, date] | None:
     if prefix.rstrip().endswith("(") or prefix.rstrip().endswith("（"):
         # An explicitly open start is outside the supported left-closed date grammar.
         return None
-    if re.match(r"\s*(?:[（(]\s*)?(?:不含|不包含|排除)", between):
+    start_values = _adjacent_boundary_values(between)
+    end_values = _adjacent_boundary_values(tail)
+    for reference in NAMED_BOUNDARY_RE.finditer(question):
+        endpoint = reference["endpoint_after"] or reference["endpoint_before"]
+        action = reference["action_before"] or reference["action_after"]
+        values = start_values if endpoint.startswith(("开始", "起始")) else end_values
+        values.update(_boundary_values(action))
+    if prefix.rstrip().endswith("[") and "," in between:
+        start_values.add(True)
+        if re.match(r"\s*\)", tail):
+            end_values.add(False)
+        elif re.match(r"\s*\]", tail):
+            end_values.add(True)
+    # The supported lower boundary is always inclusive. An explicit exclusion
+    # anywhere, with or without a conflicting local note, requires clarification.
+    if False in start_values or len(end_values) != 1:
         return None
-    start_annotations = _leading_annotations(between)
-    if any(token in annotation for annotation in start_annotations for token in ("不含", "不包含", "排除")):
-        return None
-    end_annotations = _leading_annotations(tail)
-    annotation_exclusive = False
-    annotation_inclusive = False
-    for annotation in end_annotations:
-        negative = bool(re.search(r"不包含|不含|排除", annotation))
-        stripped = re.sub(r"不包含|不含|排除", "", annotation)
-        annotation_exclusive = annotation_exclusive or negative
-        annotation_inclusive = annotation_inclusive or bool(re.search(r"包含|包括|含", stripped))
-    if annotation_exclusive and annotation_inclusive:
-        return None
-    exclusive = (
-        annotation_exclusive
-        or
-        bool(re.match(r"\s*(?:[（(]\s*)?(?:不含|不包含|排除)", tail))
-        or (prefix.rstrip().endswith("[") and "," in between and bool(re.match(r"\s*\)", tail)))
-        or "不含结束日期" in question or "结束日期不含" in question
-        or "不包含结束日期" in question or "结束日期不包含" in question
-        or "结束日期为排他上界" in question
-    )
-    inclusive = (
-        annotation_inclusive
-        or
-        bool(re.match(r"\s*(?:[（(]\s*)?(?:含|包含|包括)", tail))
-        or (prefix.rstrip().endswith("[") and "," in between and bool(re.match(r"\s*\]", tail)))
-        or bool(re.search(r"(?<!不)(?:包含|包括)结束日期|结束日期(?:包含|包括)", question))
-    )
-    if exclusive and inclusive:
-        return None
-    if exclusive:
+    if False in end_values:
         return start, end
-    if inclusive:
+    if True in end_values:
         try:
             return start, end + timedelta(days=1)
         except OverflowError:
@@ -159,6 +173,34 @@ def explicit_interval(question: str) -> tuple[date, date] | None:
 
 def _clarify(message: str) -> ValidationResult:
     return ValidationResult("needs_clarification", message=message + FOLLOWUP)
+
+
+def unrecognized_question_content(question: str) -> str:
+    """Fail closed for text the five-field plan cannot account for.
+
+    This is the same small language for both model modes. Boundary text may be
+    consumed only beside a date or as a complete named endpoint statement;
+    arbitrary exclusion words are deliberately not grammar filler. The caller
+    independently verifies the actual interval, query family and ranking first.
+    """
+    annotation = r"(?:不包含|不包括|不含|排除|包含|包括|含)"
+    remainder = re.sub(
+        DATE_RE.pattern + rf"(?:\s*[（(]\s*{annotation}\s*[）)])*(?:\s*{annotation})?",
+        " ", question,
+    )
+    remainder = NAMED_BOUNDARY_RE.sub(" ", remainder)
+    remainder = re.sub(r"前\s*[+-]?\d+(?![\d.])\s*(?:个|名|款|种)?", " ", remainder)
+    grammar = (
+        "销售额和销量", "销售额与销量", "销售额以及销量", "卖得最好的", "卖得最好", "该区间",
+        "只统计已支付订单", "仅统计已支付订单", "只看已支付订单", "仅看已支付订单",
+        "已支付订单", "销售数量", "销售金额", "销售额", "销量", "支付时间", "人民币",
+        "按日期", "每日", "每天", "按日", "品类", "类别", "商品", "排行", "排名",
+        "统计", "查询", "查看", "帮我", "展示", "显示", "前", "个", "名", "款", "种",
+        "按", "从", "到", "至", "的", "和", "与", "请", "销售",
+    )
+    for token in sorted(grammar, key=len, reverse=True):
+        remainder = remainder.replace(token, " ")
+    return re.sub(r"[\s，,。！？!?、：:；;（）()\[\]【】]", "", remainder)
 
 
 def validate_plan(
@@ -199,6 +241,9 @@ def validate_plan(
             return _clarify("商品排行数量 N 必须为 1—10，请调整。")
     elif candidate.rank_by is not None or candidate.top_n is not None:
         return _clarify("每日销售和品类销售不使用商品排行参数，请调整问题。")
+    if question is not None and candidate.query_type != "top_products":
+        if re.search(r"排行|排名|前\s*[+-]?\d+|按\s*(?:销售额|金额|销量|销售数量)", question):
+            return _clarify("每日销售和品类销售使用固定排序与完整结果，无法表达附加排行口径或前 N 条限制，请调整问题。")
     if candidate.start_date is None or candidate.end_date is None:
         return _clarify("请提供明确的开始日期和结束日期（YYYY-MM-DD），并注明结束日期是否包含。")
     if not DATE_RE.fullmatch(candidate.start_date) or not DATE_RE.fullmatch(candidate.end_date):
@@ -219,6 +264,8 @@ def validate_plan(
         return _clarify("开始日期必须早于结束日期（结束日期为不包含的上界）。")
     if span > 90:
         return _clarify("日期跨度最多为 90 个自然日，请缩小区间。")
+    if question is not None and unrecognized_question_content(question):
+        return _clarify("问题包含当前五字段计划无法可靠表达的附加条件或未知表述，请使用支持的查询格式；不会忽略这些条件执行查询。")
     if decision == "needs_clarification":
         return _clarify(message or "问题仍有业务歧义，请明确查询口径。")
     plan = ValidatedPlan(

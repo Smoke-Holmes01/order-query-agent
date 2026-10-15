@@ -2,7 +2,6 @@
 
 import asyncio
 import json
-import re
 import time
 from typing import Protocol
 
@@ -27,26 +26,8 @@ class MockModelAdapter:
         reason = unsupported_reason(question)
         if reason:
             return ModelDecision(decision="unsupported", plan=None, message=reason)
-        # Remove only documented grammar pieces. Unknown business qualifiers must not
-        # disappear merely because a known query keyword occurs elsewhere.
-        remainder = DATE_RE.sub("", question)
-        remainder = re.sub(r"前\s*[+-]?\d+(?:\.\d+)?", "前", remainder)
-        grammar = (
-            "销售额和销量", "销售额与销量", "销售额以及销量", "卖得最好的", "卖得最好", "该区间",
-            "只统计已支付订单", "仅统计已支付订单", "只看已支付订单", "仅看已支付订单",
-            "已支付订单", "销售数量", "销售金额", "销售额", "销量", "支付时间", "开始日期", "结束日期",
-            "不包含", "不含", "包含", "包括", "排除", "人民币", "按日期", "每日", "每天", "按日",
-            "品类", "类别", "商品", "排行", "排名", "统计", "查询", "查看", "帮我", "前", "个", "名",
-            "款", "种", "按", "从", "到", "至", "的", "含", "和", "与", "请", "销售",
-        )
-        for token in sorted(grammar, key=len, reverse=True):
-            remainder = remainder.replace(token, "")
-        remainder = re.sub(r"[\s，,。！？!?、：:；;（）()\[\]【】]", "", remainder)
-        if remainder:
-            return ModelDecision(
-                decision="needs_clarification", plan=None,
-                message="mock 离线规则无法可靠识别此表述，请使用演示格式，提供明确日期、结束边界和查询口径。",
-            )
+        # Unknown clauses are checked by shared local validation, including in live
+        # mode when a provider omits a condition from an otherwise valid plan.
         requested_types = query_types_in_question(question)
         if len(requested_types) != 1:
             return ModelDecision(decision="needs_clarification", plan=None, message="请明确选择一个查询类型：每日销售、品类销售或商品排行。")

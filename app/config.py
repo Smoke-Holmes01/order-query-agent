@@ -21,6 +21,7 @@ class Settings(BaseModel):
     model_name: str = ""
     model_api_key: SecretStr = SecretStr("")
     model_json_mode: Literal["json_object", "json_schema"] = "json_object"
+    model_allow_insecure_http: bool = False
     model_total_timeout: float = Field(default=15, ge=0.1, le=60)
     model_connect_timeout: float = Field(default=3, ge=0.1, le=30)
     model_read_timeout: float = Field(default=10, ge=0.1, le=60)
@@ -50,6 +51,8 @@ class Settings(BaseModel):
             ZoneInfo(self.app_timezone)
         except ZoneInfoNotFoundError:
             raise ValueError("Timezone data missing; install tzdata") from None
+        if self.model_allow_insecure_http and self.app_env != "development":
+            raise ValueError("MODEL_ALLOW_INSECURE_HTTP is allowed only in development")
         if self.model_mode == "live":
             if not self.model_name.strip() or not self.model_api_key.get_secret_value().strip():
                 raise ValueError("live requires MODEL_NAME and MODEL_API_KEY")
@@ -57,7 +60,8 @@ class Settings(BaseModel):
             if url.scheme not in {"http", "https"} or not url.hostname or url.username or url.password or url.query or url.fragment:
                 raise ValueError("live requires a valid MODEL_BASE_URL without credentials/query/fragment")
             if url.scheme == "http" and url.hostname not in {"localhost", "127.0.0.1", "::1"}:
-                raise ValueError("remote model endpoint must use HTTPS")
+                if not self.model_allow_insecure_http:
+                    raise ValueError("remote model endpoint must use HTTPS unless explicitly enabled in development")
         return self
 
 

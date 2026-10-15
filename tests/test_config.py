@@ -36,3 +36,34 @@ def test_live_configuration_does_not_fall_back():
 def test_secret_is_redacted():
     settings = Settings(db_password="unit-test-secret")
     assert "unit-test-secret" not in repr(settings)
+
+
+def live_settings(**changes):
+    values = dict(db_password="unit-test-placeholder", model_mode="live",
+                  model_base_url="http://model.example/v1", model_name="unit-test-model",
+                  model_api_key="unit-test-placeholder")
+    return Settings(**(values | changes))
+
+
+def test_remote_http_requires_explicit_opt_in():
+    with pytest.raises(ValidationError):
+        live_settings()
+    assert live_settings(model_allow_insecure_http=True).app_env == "development"
+
+
+@pytest.mark.parametrize("environment", ["test", "production"])
+def test_insecure_http_opt_in_is_development_only(environment):
+    with pytest.raises(ValidationError):
+        live_settings(model_allow_insecure_http=True, app_env=environment)
+
+
+def test_https_needs_no_insecure_opt_in():
+    assert not live_settings(model_base_url="https://model.example/v1").model_allow_insecure_http
+
+
+def test_env_can_explicitly_enable_development_http(tmp_path):
+    runtime = tmp_path / ".env"
+    runtime.write_text("DB_PASSWORD=unit-test-placeholder\nMODEL_MODE=live\n"
+                       "MODEL_BASE_URL=http://model.example/v1\nMODEL_NAME=unit-test-model\n"
+                       "MODEL_API_KEY=unit-test-placeholder\nMODEL_ALLOW_INSECURE_HTTP=true\n")
+    assert load_settings(env_file=runtime).model_allow_insecure_http

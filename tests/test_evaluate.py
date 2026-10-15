@@ -27,11 +27,11 @@ def response_for(case):
             "query": {"template_id": "unit-test-only"} if plan else None}
 
 
-def test_cases_cover_eight_queries_and_six_non_queries():
-    assert len(CASES) == 14
+def test_cases_cover_eight_queries_and_eight_non_queries():
+    assert len(CASES) == 16
     assert sum(case["expected_status"] == "success" for case in CASES) == 8
-    assert sum(case["expected_status"] == "needs_clarification" for case in CASES) == 3
-    assert sum(case["expected_status"] == "unsupported" for case in CASES) == 3
+    assert sum(case["expected_status"] == "needs_clarification" for case in CASES) == 4
+    assert sum(case["expected_status"] == "unsupported" for case in CASES) == 4
 
 
 def test_exact_money_and_integer_types():

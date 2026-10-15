@@ -3,18 +3,18 @@
   "database": "mysql",
   "data_notice": "所有业务数据均为固定模拟数据；mock 仅替代模型，不替代 MySQL。",
   "metric_notice": "仅衡量固定语义用例，不代表通用自然语言查询准确率；澄清/拒绝不计入查询结果正确数。",
-  "total_cases": 14,
-  "plan_status_passed": 14,
+  "total_cases": 16,
+  "plan_status_passed": 16,
   "query_result_cases": 8,
   "query_results_correct": 8,
-  "non_query_cases": 6,
-  "non_query_passed": 6,
-  "answers_passed": 14,
-  "all_checks_passed": 14,
+  "non_query_cases": 8,
+  "non_query_passed": 8,
+  "answers_passed": 16,
+  "all_checks_passed": 16,
   "not_run_cases": 0,
   "error_classification": {},
   "provider_error_classification": {},
-  "elapsed_ms": 217.421,
+  "elapsed_ms": 190.874,
   "cases": [
     {
       "id": "01_daily_sales",
@@ -47,7 +47,7 @@
           "sales_quantity": 3
         }
       ],
-      "elapsed_ms": 23.396
+      "elapsed_ms": 21.904
     },
     {
       "id": "02_category_sales",
@@ -80,7 +80,7 @@
           "sales_quantity": 5
         }
       ],
-      "elapsed_ms": 35.333
+      "elapsed_ms": 21.367
     },
     {
       "id": "03_top_amount",
@@ -119,7 +119,7 @@
           "sales_quantity": 5
         }
       ],
-      "elapsed_ms": 30.126
+      "elapsed_ms": 39.943
     },
     {
       "id": "04_top_quantity",
@@ -150,7 +150,7 @@
           "sales_quantity": 5
         }
       ],
-      "elapsed_ms": 31.237
+      "elapsed_ms": 17.305
     },
     {
       "id": "05_inclusive_lower_boundary",
@@ -178,7 +178,7 @@
           "sales_quantity": 3
         }
       ],
-      "elapsed_ms": 18.635
+      "elapsed_ms": 29.751
     },
     {
       "id": "06_exclusive_upper_boundary",
@@ -206,7 +206,7 @@
           "sales_quantity": 6
         }
       ],
-      "elapsed_ms": 19.211
+      "elapsed_ms": 17.501
     },
     {
       "id": "07_empty_interval",
@@ -228,7 +228,7 @@
         "top_n": null
       },
       "actual_data": [],
-      "elapsed_ms": 19.391
+      "elapsed_ms": 17.101
     },
     {
       "id": "08_paid_only_total",
@@ -261,7 +261,7 @@
           "sales_quantity": 3
         }
       ],
-      "elapsed_ms": 34.483
+      "elapsed_ms": 18.173
     },
     {
       "id": "09_ambiguous_ranking",
@@ -277,7 +277,7 @@
       "error_category": null,
       "actual_plan": null,
       "actual_data": [],
-      "elapsed_ms": 1.136
+      "elapsed_ms": 1.06
     },
     {
       "id": "10_missing_dates",
@@ -293,7 +293,7 @@
       "error_category": null,
       "actual_plan": null,
       "actual_data": [],
-      "elapsed_ms": 0.943
+      "elapsed_ms": 1.071
     },
     {
       "id": "10b_ambiguous_end_date",
@@ -309,7 +309,7 @@
       "error_category": null,
       "actual_plan": null,
       "actual_data": [],
-      "elapsed_ms": 0.911
+      "elapsed_ms": 0.962
     },
     {
       "id": "11_forecast_unsupported",
@@ -325,7 +325,7 @@
       "error_category": null,
       "actual_plan": null,
       "actual_data": [],
-      "elapsed_ms": 0.81
+      "elapsed_ms": 1.088
     },
     {
       "id": "12_delete_unsupported",
@@ -341,7 +341,7 @@
       "error_category": null,
       "actual_plan": null,
       "actual_data": [],
-      "elapsed_ms": 0.82
+      "elapsed_ms": 0.875
     },
     {
       "id": "12b_sql_injection_unsupported",
@@ -357,11 +357,43 @@
       "error_category": null,
       "actual_plan": null,
       "actual_data": [],
-      "elapsed_ms": 0.901
+      "elapsed_ms": 0.855
+    },
+    {
+      "id": "13_conflicting_trailing_start_boundary",
+      "expected_status": "needs_clarification",
+      "actual_status": "needs_clarification",
+      "plan_status_passed": true,
+      "result_correct": null,
+      "answer_passed": true,
+      "database_query_count": 0,
+      "passed": true,
+      "failures": [],
+      "error_code": null,
+      "error_category": null,
+      "actual_plan": null,
+      "actual_data": [],
+      "elapsed_ms": 0.947
+    },
+    {
+      "id": "14_weekend_filter_unsupported",
+      "expected_status": "unsupported",
+      "actual_status": "unsupported",
+      "plan_status_passed": true,
+      "result_correct": null,
+      "answer_passed": true,
+      "database_query_count": 0,
+      "passed": true,
+      "failures": [],
+      "error_code": null,
+      "error_category": null,
+      "actual_plan": null,
+      "actual_data": [],
+      "elapsed_ms": 0.875
     }
   ],
   "exit_status": 0,
   "mysql_version": "8.4.11",
   "python_version": "3.11.16",
-  "completed_at_utc": "2026-10-15T09:30:49.912536+00:00"
+  "completed_at_utc": "2026-10-15T10:00:20.465711+00:00"
 }

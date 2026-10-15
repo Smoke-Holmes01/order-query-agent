@@ -1,27 +1,390 @@
 {
   "model_mode": "live",
   "database": "mysql",
-  "stage": "configuration",
-  "error_code": "EVALUATION_CONFIGURATION_ERROR",
-  "cause_code": null,
-  "message": "配置校验未通过；live 必须配置 MODEL_BASE_URL、MODEL_NAME、MODEL_API_KEY。不会回退到 mock。",
-  "total_cases": 14,
-  "plan_status_passed": 0,
+  "data_notice": "所有业务数据均为固定模拟数据；mock 仅替代模型，不替代 MySQL。",
+  "metric_notice": "仅衡量固定语义用例，不代表通用自然语言查询准确率；澄清/拒绝不计入查询结果正确数。",
+  "total_cases": 16,
+  "plan_status_passed": 9,
   "query_result_cases": 8,
-  "query_results_correct": 0,
-  "non_query_cases": 6,
-  "non_query_passed": 0,
-  "answers_passed": 0,
-  "all_checks_passed": 0,
-  "not_run_cases": 14,
+  "query_results_correct": 5,
+  "non_query_cases": 8,
+  "non_query_passed": 4,
+  "answers_passed": 12,
+  "all_checks_passed": 9,
+  "not_run_cases": 0,
   "error_classification": {
-    "EVALUATION_CONFIGURATION_ERROR": 1
+    "QUERY_EXECUTION_MISMATCH": 3,
+    "PLAN_MISMATCH": 3,
+    "MODEL_OUTPUT_INVALID": 3,
+    "ANSWER_MISMATCH": 4,
+    "UNEXPECTED_ERROR": 7,
+    "STATUS_MISMATCH": 7,
+    "ROWS_MISMATCH": 3,
+    "MODEL_TIMEOUT": 4
   },
-  "provider_error_classification": {},
-  "cases": [],
-  "mysql_version": null,
+  "provider_error_classification": {
+    "format": 3,
+    "timeout": 4
+  },
+  "elapsed_ms": 161999.723,
+  "cases": [
+    {
+      "id": "01_daily_sales",
+      "expected_status": "success",
+      "actual_status": "failed",
+      "plan_status_passed": false,
+      "result_correct": false,
+      "answer_passed": false,
+      "database_query_count": 0,
+      "passed": false,
+      "failures": [
+        "STATUS_MISMATCH",
+        "PLAN_MISMATCH",
+        "ROWS_MISMATCH",
+        "QUERY_EXECUTION_MISMATCH",
+        "UNEXPECTED_ERROR",
+        "ANSWER_MISMATCH"
+      ],
+      "error_code": "MODEL_OUTPUT_INVALID",
+      "error_category": "format",
+      "actual_plan": null,
+      "actual_data": [],
+      "elapsed_ms": 12665.641
+    },
+    {
+      "id": "02_category_sales",
+      "expected_status": "success",
+      "actual_status": "success",
+      "plan_status_passed": true,
+      "result_correct": true,
+      "answer_passed": true,
+      "database_query_count": 1,
+      "passed": true,
+      "failures": [],
+      "error_code": null,
+      "error_category": null,
+      "actual_plan": {
+        "query_type": "category_sales",
+        "start_date": "2026-10-01",
+        "end_date": "2026-10-04",
+        "rank_by": null,
+        "top_n": null
+      },
+      "actual_data": [
+        {
+          "category": "数码",
+          "sales_amount": "350.00",
+          "sales_quantity": 4
+        },
+        {
+          "category": "家居",
+          "sales_amount": "150.00",
+          "sales_quantity": 5
+        }
+      ],
+      "elapsed_ms": 13180.142
+    },
+    {
+      "id": "03_top_amount",
+      "expected_status": "success",
+      "actual_status": "failed",
+      "plan_status_passed": false,
+      "result_correct": false,
+      "answer_passed": false,
+      "database_query_count": 0,
+      "passed": false,
+      "failures": [
+        "STATUS_MISMATCH",
+        "PLAN_MISMATCH",
+        "ROWS_MISMATCH",
+        "QUERY_EXECUTION_MISMATCH",
+        "UNEXPECTED_ERROR",
+        "ANSWER_MISMATCH"
+      ],
+      "error_code": "MODEL_OUTPUT_INVALID",
+      "error_category": "format",
+      "actual_plan": null,
+      "actual_data": [],
+      "elapsed_ms": 13879.707
+    },
+    {
+      "id": "04_top_quantity",
+      "expected_status": "success",
+      "actual_status": "failed",
+      "plan_status_passed": false,
+      "result_correct": false,
+      "answer_passed": false,
+      "database_query_count": 0,
+      "passed": false,
+      "failures": [
+        "STATUS_MISMATCH",
+        "PLAN_MISMATCH",
+        "ROWS_MISMATCH",
+        "QUERY_EXECUTION_MISMATCH",
+        "UNEXPECTED_ERROR",
+        "ANSWER_MISMATCH"
+      ],
+      "error_code": "MODEL_OUTPUT_INVALID",
+      "error_category": "format",
+      "actual_plan": null,
+      "actual_data": [],
+      "elapsed_ms": 12405.909
+    },
+    {
+      "id": "05_inclusive_lower_boundary",
+      "expected_status": "success",
+      "actual_status": "success",
+      "plan_status_passed": true,
+      "result_correct": true,
+      "answer_passed": true,
+      "database_query_count": 1,
+      "passed": true,
+      "failures": [],
+      "error_code": null,
+      "error_category": null,
+      "actual_plan": {
+        "query_type": "daily_sales",
+        "start_date": "2026-10-02",
+        "end_date": "2026-10-04",
+        "rank_by": null,
+        "top_n": null
+      },
+      "actual_data": [
+        {
+          "payment_date": "2026-10-02",
+          "sales_amount": "160.00",
+          "sales_quantity": 3
+        }
+      ],
+      "elapsed_ms": 6450.047
+    },
+    {
+      "id": "06_exclusive_upper_boundary",
+      "expected_status": "success",
+      "actual_status": "success",
+      "plan_status_passed": true,
+      "result_correct": true,
+      "answer_passed": true,
+      "database_query_count": 1,
+      "passed": true,
+      "failures": [],
+      "error_code": null,
+      "error_category": null,
+      "actual_plan": {
+        "query_type": "daily_sales",
+        "start_date": "2026-10-01",
+        "end_date": "2026-10-02",
+        "rank_by": null,
+        "top_n": null
+      },
+      "actual_data": [
+        {
+          "payment_date": "2026-10-01",
+          "sales_amount": "340.00",
+          "sales_quantity": 6
+        }
+      ],
+      "elapsed_ms": 8131.979
+    },
+    {
+      "id": "07_empty_interval",
+      "expected_status": "success",
+      "actual_status": "success",
+      "plan_status_passed": true,
+      "result_correct": true,
+      "answer_passed": true,
+      "database_query_count": 1,
+      "passed": true,
+      "failures": [],
+      "error_code": null,
+      "error_category": null,
+      "actual_plan": {
+        "query_type": "daily_sales",
+        "start_date": "2026-10-03",
+        "end_date": "2026-10-04",
+        "rank_by": null,
+        "top_n": null
+      },
+      "actual_data": [],
+      "elapsed_ms": 7280.739
+    },
+    {
+      "id": "08_paid_only_total",
+      "expected_status": "success",
+      "actual_status": "success",
+      "plan_status_passed": true,
+      "result_correct": true,
+      "answer_passed": true,
+      "database_query_count": 1,
+      "passed": true,
+      "failures": [],
+      "error_code": null,
+      "error_category": null,
+      "actual_plan": {
+        "query_type": "daily_sales",
+        "start_date": "2026-10-01",
+        "end_date": "2026-10-04",
+        "rank_by": null,
+        "top_n": null
+      },
+      "actual_data": [
+        {
+          "payment_date": "2026-10-01",
+          "sales_amount": "340.00",
+          "sales_quantity": 6
+        },
+        {
+          "payment_date": "2026-10-02",
+          "sales_amount": "160.00",
+          "sales_quantity": 3
+        }
+      ],
+      "elapsed_ms": 7307.981
+    },
+    {
+      "id": "09_ambiguous_ranking",
+      "expected_status": "needs_clarification",
+      "actual_status": "failed",
+      "plan_status_passed": false,
+      "result_correct": null,
+      "answer_passed": false,
+      "database_query_count": 0,
+      "passed": false,
+      "failures": [
+        "STATUS_MISMATCH",
+        "UNEXPECTED_ERROR",
+        "ANSWER_MISMATCH"
+      ],
+      "error_code": "MODEL_TIMEOUT",
+      "error_category": "timeout",
+      "actual_plan": null,
+      "actual_data": [],
+      "elapsed_ms": 15003.999
+    },
+    {
+      "id": "10_missing_dates",
+      "expected_status": "needs_clarification",
+      "actual_status": "needs_clarification",
+      "plan_status_passed": true,
+      "result_correct": null,
+      "answer_passed": true,
+      "database_query_count": 0,
+      "passed": true,
+      "failures": [],
+      "error_code": null,
+      "error_category": null,
+      "actual_plan": null,
+      "actual_data": [],
+      "elapsed_ms": 10216.359
+    },
+    {
+      "id": "10b_ambiguous_end_date",
+      "expected_status": "needs_clarification",
+      "actual_status": "failed",
+      "plan_status_passed": false,
+      "result_correct": null,
+      "answer_passed": true,
+      "database_query_count": 0,
+      "passed": false,
+      "failures": [
+        "STATUS_MISMATCH",
+        "UNEXPECTED_ERROR"
+      ],
+      "error_code": "MODEL_TIMEOUT",
+      "error_category": "timeout",
+      "actual_plan": null,
+      "actual_data": [],
+      "elapsed_ms": 10015.811
+    },
+    {
+      "id": "11_forecast_unsupported",
+      "expected_status": "unsupported",
+      "actual_status": "unsupported",
+      "plan_status_passed": true,
+      "result_correct": null,
+      "answer_passed": true,
+      "database_query_count": 0,
+      "passed": true,
+      "failures": [],
+      "error_code": null,
+      "error_category": null,
+      "actual_plan": null,
+      "actual_data": [],
+      "elapsed_ms": 9552.716
+    },
+    {
+      "id": "12_delete_unsupported",
+      "expected_status": "unsupported",
+      "actual_status": "unsupported",
+      "plan_status_passed": true,
+      "result_correct": null,
+      "answer_passed": true,
+      "database_query_count": 0,
+      "passed": true,
+      "failures": [],
+      "error_code": null,
+      "error_category": null,
+      "actual_plan": null,
+      "actual_data": [],
+      "elapsed_ms": 10240.523
+    },
+    {
+      "id": "12b_sql_injection_unsupported",
+      "expected_status": "unsupported",
+      "actual_status": "failed",
+      "plan_status_passed": false,
+      "result_correct": null,
+      "answer_passed": true,
+      "database_query_count": 0,
+      "passed": false,
+      "failures": [
+        "STATUS_MISMATCH",
+        "UNEXPECTED_ERROR"
+      ],
+      "error_code": "MODEL_TIMEOUT",
+      "error_category": "timeout",
+      "actual_plan": null,
+      "actual_data": [],
+      "elapsed_ms": 10029.973
+    },
+    {
+      "id": "13_conflicting_trailing_start_boundary",
+      "expected_status": "needs_clarification",
+      "actual_status": "failed",
+      "plan_status_passed": false,
+      "result_correct": null,
+      "answer_passed": true,
+      "database_query_count": 0,
+      "passed": false,
+      "failures": [
+        "STATUS_MISMATCH",
+        "UNEXPECTED_ERROR"
+      ],
+      "error_code": "MODEL_TIMEOUT",
+      "error_category": "timeout",
+      "actual_plan": null,
+      "actual_data": [],
+      "elapsed_ms": 10025.191
+    },
+    {
+      "id": "14_weekend_filter_unsupported",
+      "expected_status": "unsupported",
+      "actual_status": "unsupported",
+      "plan_status_passed": true,
+      "result_correct": null,
+      "answer_passed": true,
+      "database_query_count": 0,
+      "passed": true,
+      "failures": [],
+      "error_code": null,
+      "error_category": null,
+      "actual_plan": null,
+      "actual_data": [],
+      "elapsed_ms": 5612.891
+    }
+  ],
+  "exit_status": 1,
+  "mysql_version": "8.4.11",
   "python_version": "3.11.16",
-  "completed_at_utc": "2026-10-15T09:20:34.766259+00:00",
-  "elapsed_ms": 709.244,
-  "exit_status": 2
+  "completed_at_utc": "2026-10-15T10:01:46.662168+00:00"
 }

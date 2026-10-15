@@ -6,7 +6,7 @@
     "server_version": "8.4.11",
     "model_mode": "mock"
   },
-  "http_semantic_cases_passed": 14,
+  "http_semantic_cases_passed": 16,
   "client_state_injection_http": 422,
   "cases": [
     {
@@ -92,6 +92,86 @@
       "http_status": 200,
       "status": "unsupported",
       "passed": true
+    },
+    {
+      "case": "13_conflicting_trailing_start_boundary",
+      "http_status": 200,
+      "status": "needs_clarification",
+      "passed": true
+    },
+    {
+      "case": "14_weekend_filter_unsupported",
+      "http_status": 200,
+      "status": "unsupported",
+      "passed": true
+    }
+  ],
+  "regression_responses": [
+    {
+      "question": "查询从2026-10-01（含）到2026-10-04（不含）的每日销售额和销量，不含开始日期",
+      "response": {
+        "request_id": "e6ccabd7-f27f-4da2-8f6a-921457d07485",
+        "status": "needs_clarification",
+        "model_mode": "mock",
+        "answer": "请提供两个明确的 YYYY-MM-DD 日期，并注明结束日期是否包含；相对日期暂不支持。请将原问题和补充条件一起重新提交；本服务没有跨请求记忆。",
+        "plan": null,
+        "data": [],
+        "trace": [
+          {
+            "node": "parse_plan",
+            "result": "parsed",
+            "duration_ms": 0.086,
+            "attempt": 1
+          },
+          {
+            "node": "validate_plan",
+            "result": "needs_clarification",
+            "duration_ms": 0.038,
+            "attempt": null
+          },
+          {
+            "node": "format_answer",
+            "result": "needs_clarification",
+            "duration_ms": 0.001,
+            "attempt": null
+          }
+        ],
+        "error": null,
+        "query": null
+      }
+    },
+    {
+      "question": "查询从2026-10-01（含）到2026-10-04（不含）的每日销售额，排除周末",
+      "response": {
+        "request_id": "95900d5b-6861-491e-b553-3879e5dc433a",
+        "status": "unsupported",
+        "model_mode": "mock",
+        "answer": "仅支持已支付订单的每日销售、品类销售及按销售额或销量的商品排行。不支持写操作、任意筛选、SQL 指令或原因推断。",
+        "plan": null,
+        "data": [],
+        "trace": [
+          {
+            "node": "parse_plan",
+            "result": "parsed",
+            "duration_ms": 0.016,
+            "attempt": 1
+          },
+          {
+            "node": "validate_plan",
+            "result": "unsupported",
+            "duration_ms": 0.009,
+            "attempt": null
+          },
+          {
+            "node": "format_answer",
+            "result": "unsupported",
+            "duration_ms": 0.001,
+            "attempt": null
+          }
+        ],
+        "error": null,
+        "query": null
+      }
     }
   ]
 }
